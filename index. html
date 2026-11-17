@@ -1,0 +1,251 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real Madrid Penalty Cup</title>
+<style>
+body {
+  margin: 0;
+  background: #071b12;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+header {
+  background: #102c50;
+  padding: 15px;
+}
+h1 { color: gold; }
+#scoreboard {
+  display: flex;
+  justify-content: space-around;
+  background: #172d24;
+  padding: 15px;
+  font-size: 18px;
+}
+#stadium {
+  margin: 15px auto;
+  max-width: 600px;
+  height: 300px;
+  position: relative;
+  overflow: hidden;
+  background: repeating-linear-gradient(
+    90deg, #168044 0px, #168044 50px,
+    #116b38 50px, #116b38 100px
+  );
+  border: 4px solid white;
+}
+#crowd {
+  background: #18263a;
+  padding: 12px;
+  font-size: 22px;
+}
+#goal {
+  position: absolute;
+  top: 25px;
+  left: 20%;
+  width: 60%;
+  height: 110px;
+  border: 5px solid white;
+  background: #ffffff18;
+}
+#keeper {
+  position: absolute;
+  top: 65px;
+  left: 45%;
+  font-size: 40px;
+  transition: left .4s;
+}
+#ball {
+  position: absolute;
+  bottom: 30px;
+  left: 47%;
+  font-size: 35px;
+  transition: all .7s ease;
+}
+button {
+  background: gold;
+  color: #102c50;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin: 7px;
+  font-weight: bold;
+  font-size: 16px;
+}
+button:disabled { opacity: .5; }
+#message { min-height: 28px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>REAL MADRID</h1>
+  <h3>PENALTY CUP 🏆</h3>
+  <p>Developer: Ystrix Studios</p>
+</header>
+
+<div id="crowd">🏟️ Hala Madrid! ⚽ 👏 🏟️</div>
+
+<div id="scoreboard">
+  <span>REAL MADRID</span>
+  <span id="score">0 - 0</span>
+  <span id="timer">60s</span>
+</div>
+
+<div id="stadium">
+  <div id="goal"></div>
+  <div id="keeper">🧤</div>
+  <div id="ball">⚽</div>
+</div>
+
+<h3 id="message">Choose where to shoot!</h3>
+
+<div>
+  <button onclick="shoot('left')">⬅ LEFT</button>
+  <button onclick="shoot('center')">⬆ CENTER</button>
+  <button onclick="shoot('right')">RIGHT ➡</button>
+</div>
+
+<button onclick="replay()">🔄 Replay</button>
+<button onclick="startGame()">New Match</button>
+
+<script>
+let madrid = 0;
+let opponent = 0;
+let shots = 0;
+let seconds = 60;
+let lastShot = null;
+let playing = true;
+let clock;
+
+function startGame() {
+  clearInterval(clock);
+  madrid = 0;
+  opponent = 0;
+  shots = 0;
+  seconds = 60;
+  playing = true;
+  lastShot = null;
+  update();
+  document.getElementById("message").textContent =
+    "Match started! Choose your shot.";
+  clock = setInterval(() => {
+    seconds--;
+    document.getElementById("timer").textContent =
+      seconds + "s";
+    if (seconds <= 0) {
+      endGame();
+    }
+  }, 1000);
+}
+
+function update() {
+  document.getElementById("score").textContent =
+    madrid + " - " + opponent;
+  document.getElementById("timer").textContent =
+    seconds + "s";
+}
+
+function sound(freq) {
+  try {
+    let audio = new (window.AudioContext ||
+      window.webkitAudioContext)();
+    let oscillator = audio.createOscillator();
+    let gain = audio.createGain();
+    oscillator.frequency.value = freq;
+    oscillator.connect(gain);
+    gain.connect(audio.destination);
+    oscillator.start();
+    gain.gain.exponentialRampToValueAtTime(
+      0.001, audio.currentTime + 0.3
+    );
+    oscillator.stop(audio.currentTime + 0.3);
+  } catch(e) {}
+}
+
+function shoot(direction) {
+  if (!playing || shots >= 5) return;
+
+  shots++;
+  lastShot = direction;
+
+  let keeperChoices = ["left", "center", "right"];
+  let keeperMove =
+    keeperChoices[Math.floor(Math.random() * 3)];
+
+  let ball = document.getElementById("ball");
+  let keeper = document.getElementById("keeper");
+
+  let positions = {
+    left: "15%",
+    center: "45%",
+    right: "75%"
+  };
+
+  keeper.style.left = positions[keeperMove];
+  ball.style.left = positions[direction];
+  ball.style.bottom = "165px";
+
+  if (direction === keeperMove) {
+    document.getElementById("message").textContent =
+      "🧤 SAVED! The goalkeeper stopped it!";
+    sound(180);
+  } else {
+    madrid++;
+    document.getElementById("message").textContent =
+      "⚽ GOOOOAL! HALA MADRID!";
+    sound(600);
+  }
+
+  update();
+
+  if (shots === 5) {
+    setTimeout(endGame, 1000);
+  } else {
+    setTimeout(() => {
+      ball.style.left = "47%";
+      ball.style.bottom = "30px";
+      keeper.style.left = "45%";
+    }, 1200);
+  }
+}
+
+function replay() {
+  if (!lastShot) {
+    document.getElementById("message").textContent =
+      "Take a shot first!";
+    return;
+  }
+  document.getElementById("message").textContent =
+    "🔁 Replaying your last shot: " + lastShot.toUpperCase();
+  shootReplay();
+}
+
+function shootReplay() {
+  let ball = document.getElementById("ball");
+  ball.style.left =
+    lastShot === "left" ? "15%" :
+    lastShot === "right" ? "75%" : "45%";
+  ball.style.bottom = "165px";
+  setTimeout(() => {
+    ball.style.left = "47%";
+    ball.style.bottom = "30px";
+  }, 1000);
+}
+
+function endGame() {
+  if (!playing) return;
+  playing = false;
+  clearInterval(clock);
+  document.getElementById("message").textContent =
+    "🏆 Match finished! Real Madrid scored " +
+    madrid + " goals!";
+}
+
+startGame();
+</script>
+
+</body>
+</html>
